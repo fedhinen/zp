@@ -18,7 +18,7 @@ jobs:
           version: master
       
       - name: Build releases
-        run: ./build_releases.sh
+        run: ./scripts/build.sh
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
