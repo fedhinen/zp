@@ -17,6 +17,7 @@ git clone https://github.com/fedhinen/zp
 cd zp
 zig build -Doptimize=ReleaseFast
 sudo mv zig-out/bin/zp /usr/local/bin/
+```
 
 ## Uso
 ```bash
