@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="1.0.0"
+VERSION="1.0.2"
 TARGETS=(
 	"x86_64-linux"
 	"aarch64-linux"
@@ -17,6 +17,15 @@ for target in "${TARGETS[@]}"; do
 	mkdir -p "release/$dir"
 
 	cp zig-out/bin/zp "release/$dir/"
+
+
+	if [ -f README.md ]; then
+    		cp README.md "release/$dir/"
+	fi
+
+	if [ -f LICENSE ]; then
+    		cp LICENSE "release/$dir/"
+	fi
 
 	cd release
 	tar -czf "$dir.tar.gz" "$dir"
