@@ -8,7 +8,7 @@
 ```bash
 wget https://github.com/fedhinen/zp/releases/download/v1.1.0/zp-v1.1.0-x86_64-linux.tar.gz
 tar -xzf zp-v1.1.0-x86_64-linux.tar.gz
-sudo install zp-v1.1.0-x86_64-linux.tar.gz/zp /usr/local/bin/
+sudo install zp-v1.1.0-x86_64-linux/zp /usr/local/bin/
 ```
 
 ### Codigo fuente
