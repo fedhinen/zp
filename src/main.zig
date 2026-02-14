@@ -5,15 +5,12 @@ const fs = std.fs;
 
 const Io = std.Io;
 const FICLONE = 0x40049409;
-const zp = @import("zp");
 
 pub fn main(init: std.process.Init) !void {
-
-    // This is appropriate for anything that lives as long as the process.
     const arena: std.mem.Allocator = init.arena.allocator();
 
-    // Accessing command line arguments:
     const args = try init.minimal.args.toSlice(arena);
+
     if (args.len != 3) {
         std.debug.print("Usage: {s} <src> <dest>\n", .{args[0]});
         return error.InvalidArgs;
