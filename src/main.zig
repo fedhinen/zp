@@ -2,7 +2,7 @@ const std = @import("std");
 const os = std.os;
 const linux = std.os.linux;
 const fs = std.fs;
-
+const path = fs.path;
 const Io = std.Io;
 const FICLONE = 0x40049409;
 
@@ -21,40 +21,101 @@ pub fn main(init: std.process.Init) !void {
     const dest_path = args[2];
 
     const cwd = Io.Dir.cwd();
-    const src_file = try cwd.openFile(io, src_path, .{});
-    defer src_file.close(io);
 
-    const dest_file = try cwd.createFile(io, dest_path, .{});
-    defer dest_file.close(io);
+    // manejo de directorios
+    const src_stat = try cwd.statFile(io, src_path, .{});
 
-    const reflink = linux.ioctl(dest_file.handle, FICLONE, @intCast(src_file.handle));
-    const reflink_errno = linux.errno(reflink);
-    if (reflink_errno == .SUCCESS) {
-        return;
+    switch (src_stat.kind) {
+        .file => {
+            const src_file = try cwd.openFile(io, src_path, .{});
+            defer src_file.close(io);
+
+            const dest_file = try cwd.createFile(io, dest_path, .{ .permissions = src_stat.permissions });
+            defer dest_file.close(io);
+
+            const reflink = linux.ioctl(dest_file.handle, FICLONE, @intCast(src_file.handle));
+            const reflink_errno = linux.errno(reflink);
+            if (reflink_errno == .SUCCESS) {
+                return;
+            }
+
+            var offset: u64 = 0;
+            const stat = try src_file.stat(io);
+            const total_size = stat.size;
+
+            while (offset < total_size) {
+                const bytes_copied = linux.copy_file_range(src_file.handle, null, dest_file.handle, null, total_size - offset, 0);
+
+                const copy_errno = linux.errno(bytes_copied);
+
+                if (copy_errno != .SUCCESS) {
+                    break;
+                }
+
+                offset += bytes_copied;
+                if (bytes_copied == 0) {
+                    break;
+                }
+            }
+
+            if (offset == total_size) {
+                return;
+            }
+
+            try cwd.copyFile(src_path, cwd, dest_path, io, .{});
+        },
+        .directory => {
+            const src_dir = try cwd.openDir(io, src_path, .{});
+            defer src_dir.close(io);
+
+            const dest_dir = try cwd.createDirPathOpen(io, dest_path, .{ .permissions = src_stat.permissions });
+            defer dest_dir.close(io);
+
+            const reflink = linux.ioctl(dest_dir.handle, FICLONE, @intCast(src_dir.handle));
+            const reflink_errno = linux.errno(reflink);
+            if (reflink_errno == .SUCCESS) {
+                return;
+            }
+
+            var offset: u64 = 0;
+            const total_size = src_stat.size;
+
+            while (offset < total_size) {
+                const bytes_copied = linux.copy_file_range(src_dir.handle, null, dest_dir.handle, null, total_size - offset, 0);
+
+                const copy_errno = linux.errno(bytes_copied);
+
+                if (copy_errno != .SUCCESS) {
+                    break;
+                }
+
+                offset += bytes_copied;
+                if (bytes_copied == 0) {
+                    break;
+                }
+            }
+
+            if (offset == total_size) {
+                return;
+            }
+
+            var walker = try src_dir.walk(arena);
+            defer walker.deinit();
+
+            while (try walker.next(io)) |entry| {
+                switch (entry.kind) {
+                    .file => {
+                        try entry.dir.copyFile(entry.basename, dest_dir, entry.path, io, .{});
+                    },
+                    .directory => {
+                        try dest_dir.createDir(io, entry.path, src_stat.permissions);
+                    },
+                    else => return error.UnexpectedEntryKind,
+                }
+            }
+
+            try cwd.copyFile(src_path, cwd, dest_path, io, .{});
+        },
+        else => return error.UnexpectedEntryKind,
     }
-
-    var offset: u64 = 0;
-    const stat = try src_file.stat(io);
-    const total_size = stat.size;
-
-    while (offset < total_size) {
-        const bytes_copied = linux.copy_file_range(src_file.handle, null, dest_file.handle, null, total_size - offset, 0);
-
-        const copy_errno = linux.errno(bytes_copied);
-
-        if (copy_errno != .SUCCESS) {
-            break;
-        }
-
-        offset += bytes_copied;
-        if (bytes_copied == 0) {
-            break;
-        }
-    }
-
-    if (offset == total_size) {
-        return;
-    }
-
-    try cwd.copyFile(src_path, cwd, dest_path, io, .{});
 }
