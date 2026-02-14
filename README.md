@@ -6,9 +6,9 @@
 
 ### Binarios precompilados
 ```bash
-wget https://github.com/user/zp/releases/download/v1.0.2/zp-v1.0.2-linux-x86_64.tar.gz
-tar -xzf zp-v1.0.2-linux-x86_64.tar.gz
-sudo install zp-v1.0.2-linux-x86_64/zp /usr/local/bin/
+wget https://github.com/fedhinen/zp/releases/download/v1.1.0/zp-v1.1.0-linux-x86_64.tar.gz
+tar -xzf zp-v1.1.0-linux-x86_64.tar.gz
+sudo install zp-v1.1.0-linux-x86_64/zp /usr/local/bin/
 ```
 
 ### Codigo fuente

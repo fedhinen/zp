@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION="1.0.2"
+VERSION="1.1.0"
 TARGETS=(
 	"x86_64-linux"
 	"aarch64-linux"
